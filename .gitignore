@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+*.env
+
+# Database files (don't commit local dev DB)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite3
+
+# Testing
+.pytest_cache/
+test_careflow.db
+test_careflow.db-journal
+htmlcov/
+.coverage
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Docker
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db

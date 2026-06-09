@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CareFlow — Clinic Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .token-badge { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+    .tab-active { border-bottom: 3px solid #0ea5e9; color: #0ea5e9; font-weight: 600; }
+    .fade-in { animation: fadeIn .4s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<!-- ── Navbar ──────────────────────────────────────────────────────────────── -->
+<nav class="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shadow-sm">
+  <div class="flex items-center gap-3">
+    <span class="text-2xl">🏥</span>
+    <span class="text-xl font-bold text-slate-800">CareFlow</span>
+    <span class="text-xs text-slate-400 ml-1">v1.0</span>
+  </div>
+  <div id="authArea" class="flex items-center gap-3">
+    <span id="doctorName" class="text-sm text-slate-600 hidden"></span>
+    <button onclick="showLogin()" id="loginBtn"
+      class="text-sm bg-sky-500 text-white px-4 py-1.5 rounded-lg hover:bg-sky-600 transition">
+      Doctor Login
+    </button>
+    <button onclick="logout()" id="logoutBtn"
+      class="text-sm bg-slate-200 text-slate-700 px-4 py-1.5 rounded-lg hover:bg-slate-300 transition hidden">
+      Logout
+    </button>
+  </div>
+</nav>
+
+<!-- ── Tabs ────────────────────────────────────────────────────────────────── -->
+<div class="bg-white border-b border-slate-200 px-6 flex gap-6">
+  <button class="py-3 text-sm tab-active" onclick="showTab('book', this)">📅 Book Appointment</button>
+  <button class="py-3 text-sm text-slate-500" onclick="showTab('queue', this)">🔢 Live Queue</button>
+  <button class="py-3 text-sm text-slate-500" onclick="showTab('today', this)">📋 Today's List</button>
+  <button class="py-3 text-sm text-slate-500" onclick="showTab('about', this)">ℹ️ About</button>
+</div>
+
+<div class="max-w-5xl mx-auto px-4 py-8">
+
+<!-- ── BOOK TAB ───────────────────────────────────────────────────────────── -->
+<div id="tab-book" class="fade-in">
+  <div class="grid md:grid-cols-2 gap-8">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <h2 class="text-lg font-semibold text-slate-800 mb-1">New Appointment</h2>
+      <p class="text-sm text-slate-500 mb-5">Fill in patient details to book a slot.</p>
+      <form id="bookForm" onsubmit="bookAppointment(event)" class="space-y-4">
+        <div>
+          <label class="text-sm font-medium text-slate-700">Patient Name *</label>
+          <input id="f_name" required placeholder="e.g. Arjun Sharma"
+            class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-sm font-medium text-slate-700">Age</label>
+            <input id="f_age" type="number" min="1" max="120" placeholder="30"
+              class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+          </div>
+          <div>
+            <label class="text-sm font-medium text-slate-700">Gender</label>
+            <select id="f_gender" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400">
+              <option value="other">Other</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">Phone *</label>
+          <input id="f_phone" required placeholder="+91 98765 43210"
+            class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">Location</label>
+          <input id="f_location" placeholder="City / Area"
+            class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">Appointment Date & Time *</label>
+          <input id="f_time" required type="datetime-local"
+            class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">Doctor</label>
+          <select id="f_doctor" class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400">
+            <option value="">— Select Doctor —</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-medium text-slate-700">Notes</label>
+          <textarea id="f_notes" rows="2" placeholder="Symptoms, reason for visit..."
+            class="w-full mt-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"></textarea>
+        </div>
+        <button type="submit"
+          class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2.5 rounded-lg transition text-sm">
+          Book Appointment
+        </button>
+      </form>
+    </div>
+
+    <!-- Confirmation card -->
+    <div id="confirmCard" class="hidden fade-in">
+      <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center">
+        <div class="text-5xl mb-3">✅</div>
+        <h3 class="text-lg font-bold text-emerald-800">Appointment Confirmed!</h3>
+        <div class="mt-4 bg-white rounded-xl p-4 text-left space-y-2">
+          <div class="flex justify-between text-sm"><span class="text-slate-500">Patient</span><span id="c_name" class="font-medium"></span></div>
+          <div class="flex justify-between text-sm"><span class="text-slate-500">Time</span><span id="c_time" class="font-medium"></span></div>
+          <div class="flex justify-between text-sm"><span class="text-slate-500">Phone</span><span id="c_phone" class="font-medium"></span></div>
+          <div class="flex justify-between text-sm"><span class="text-slate-500">Queue Token</span>
+            <span id="c_token" class="text-2xl font-bold text-sky-600 token-badge"></span>
+          </div>
+        </div>
+        <p class="text-xs text-slate-500 mt-3">Show this token number at the reception.</p>
+        <button onclick="resetBook()" class="mt-4 text-sm text-sky-600 underline">Book another</button>
+      </div>
+    </div>
+
+    <!-- Quick stats (right column, top) -->
+    <div id="statsCard" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">Today at a Glance</h3>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-sky-50 rounded-xl p-3 text-center">
+          <div id="s_total" class="text-3xl font-bold text-sky-600">—</div>
+          <div class="text-xs text-slate-500 mt-1">Total</div>
+        </div>
+        <div class="bg-amber-50 rounded-xl p-3 text-center">
+          <div id="s_waiting" class="text-3xl font-bold text-amber-500">—</div>
+          <div class="text-xs text-slate-500 mt-1">Waiting</div>
+        </div>
+        <div class="bg-emerald-50 rounded-xl p-3 text-center">
+          <div id="s_checkedin" class="text-3xl font-bold text-emerald-600">—</div>
+          <div class="text-xs text-slate-500 mt-1">Checked In</div>
+        </div>
+        <div class="bg-slate-50 rounded-xl p-3 text-center">
+          <div id="s_done" class="text-3xl font-bold text-slate-600">—</div>
+          <div class="text-xs text-slate-500 mt-1">Completed</div>
+        </div>
+      </div>
+      <p id="statsNote" class="text-xs text-slate-400 mt-3 text-center">Login to see live stats</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── QUEUE TAB ──────────────────────────────────────────────────────────── -->
+<div id="tab-queue" class="hidden fade-in">
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-lg font-semibold text-slate-800">Live Queue Display</h2>
+        <p class="text-sm text-slate-500">Token board — place this on the waiting room screen.</p>
+      </div>
+      <button onclick="loadQueue()" class="text-sm bg-sky-500 text-white px-4 py-2 rounded-lg hover:bg-sky-600 transition">
+        🔄 Refresh
+      </button>
+    </div>
+    <div id="queueList" class="space-y-3">
+      <p class="text-slate-400 text-sm text-center py-8">Login and click Refresh to see the queue.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── TODAY TAB ─────────────────────────────────────────────────────────── -->
+<div id="tab-today" class="hidden fade-in">
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-lg font-semibold text-slate-800">Today's Appointments</h2>
+        <p class="text-sm text-slate-500" id="todayDate"></p>
+      </div>
+      <button onclick="loadToday()" class="text-sm bg-sky-500 text-white px-4 py-2 rounded-lg hover:bg-sky-600 transition">
+        🔄 Refresh
+      </button>
+    </div>
+    <div id="todayList">
+      <p class="text-slate-400 text-sm text-center py-8">Login to view today's appointments.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── ABOUT TAB ─────────────────────────────────────────────────────────── -->
+<div id="tab-about" class="hidden fade-in">
+  <div class="grid md:grid-cols-2 gap-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <h2 class="text-lg font-semibold text-slate-800 mb-4">About This Project</h2>
+      <div class="space-y-3 text-sm text-slate-600">
+        <p>CareFlow started as a B.Tech project in 2018 — a <strong>Tkinter desktop app</strong> with SQLite for managing hospital appointments, with a text-to-speech queue announcer built in Python.</p>
+        <p>This version upgrades it to a <strong>production-grade REST API</strong> using modern tooling, ready for real clinic deployment.</p>
+        <div class="bg-slate-50 rounded-xl p-4 font-mono text-xs space-y-1">
+          <div><span class="text-sky-600">Original:</span> Tkinter + SQLite + pyttsx3</div>
+          <div><span class="text-emerald-600">Upgraded:</span> FastAPI + PostgreSQL + JWT + Docker</div>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <h2 class="text-lg font-semibold text-slate-800 mb-4">Tech Stack</h2>
+      <div class="space-y-2">
+        <div class="flex items-center gap-2 text-sm"><span class="w-3 h-3 bg-sky-400 rounded-full"></span><strong>FastAPI</strong> — REST API with auto Swagger docs</div>
+        <div class="flex items-center gap-2 text-sm"><span class="w-3 h-3 bg-emerald-400 rounded-full"></span><strong>SQLAlchemy</strong> — ORM (SQLite / PostgreSQL)</div>
+        <div class="flex items-center gap-2 text-sm"><span class="w-3 h-3 bg-violet-400 rounded-full"></span><strong>JWT Auth</strong> — Secure doctor login (jose + passlib)</div>
+        <div class="flex items-center gap-2 text-sm"><span class="w-3 h-3 bg-amber-400 rounded-full"></span><strong>Pydantic v2</strong> — Request/response validation</div>
+        <div class="flex items-center gap-2 text-sm"><span class="w-3 h-3 bg-rose-400 rounded-full"></span><strong>Docker</strong> — One-command deployment</div>
+        <div class="flex items-center gap-2 text-sm"><span class="w-3 h-3 bg-slate-400 rounded-full"></span><strong>Railway</strong> — Cloud deployment + managed PostgreSQL</div>
+      </div>
+      <a href="/docs" target="_blank"
+        class="mt-5 block text-center bg-sky-500 text-white text-sm py-2 rounded-lg hover:bg-sky-600 transition">
+        Open Interactive API Docs →
+      </a>
+    </div>
+  </div>
+</div>
+
+</div><!-- end max-w -->
+
+<!-- ── Login Modal ────────────────────────────────────────────────────────── -->
+<div id="loginModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl p-8 w-full max-w-sm shadow-2xl mx-4">
+    <h3 class="text-lg font-bold text-slate-800 mb-1">Doctor Login</h3>
+    <p class="text-sm text-slate-500 mb-5">Use your registered email and password.</p>
+    <div class="space-y-4">
+      <input id="loginEmail" type="email" placeholder="doctor@clinic.com"
+        class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+      <input id="loginPassword" type="password" placeholder="Password"
+        class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
+        onkeydown="if(event.key==='Enter')doLogin()" />
+      <p id="loginError" class="text-red-500 text-xs hidden">Invalid credentials</p>
+      <button onclick="doLogin()"
+        class="w-full bg-sky-500 text-white font-semibold py-2.5 rounded-lg hover:bg-sky-600 transition text-sm">
+        Login
+      </button>
+      <p class="text-xs text-center text-slate-400">
+        No account? <a href="/docs#/Authentication/register_auth_register_post" target="_blank" class="text-sky-500 underline">Register via API →</a>
+      </p>
+    </div>
+    <button onclick="hideLogin()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl">✕</button>
+  </div>
+</div>
+
+<!-- ── Toast ──────────────────────────────────────────────────────────────── -->
+<div id="toast" class="hidden fixed bottom-6 right-6 bg-slate-800 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg z-50 fade-in"></div>
+
+<script>
+  const API = '';  // same-origin; set to 'http://localhost:8000' for separate dev
+  let token = localStorage.getItem('cf_token');
+  let doctorInfo = JSON.parse(localStorage.getItem('cf_doctor') || 'null');
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  window.onload = () => {
+    document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    loadDoctors();
+    if (token) updateAuthUI(doctorInfo);
+    loadStats();
+    // Pre-fill datetime to now + 30min
+    const soon = new Date(Date.now() + 30 * 60000);
+    soon.setSeconds(0, 0);
+    document.getElementById('f_time').value = soon.toISOString().slice(0, 16);
+  };
+
+  // ── Tabs ───────────────────────────────────────────────────────────────────
+  function showTab(name, btn) {
+    ['book','queue','today','about'].forEach(t => {
+      document.getElementById('tab-'+t).classList.add('hidden');
+    });
+    document.querySelectorAll('nav + div button').forEach(b => b.classList.remove('tab-active'));
+    document.getElementById('tab-'+name).classList.remove('hidden');
+    if (btn) { btn.classList.add('tab-active'); btn.classList.remove('text-slate-500'); }
+    if (name === 'queue') loadQueue();
+    if (name === 'today') loadToday();
+  }
+
+  // ── Auth ───────────────────────────────────────────────────────────────────
+  function showLogin() { document.getElementById('loginModal').classList.remove('hidden'); }
+  function hideLogin() { document.getElementById('loginModal').classList.add('hidden'); }
+
+  async function doLogin() {
+    const email = document.getElementById('loginEmail').value;
+    const pass = document.getElementById('loginPassword').value;
+    try {
+      const r = await fetch(API + '/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass })
+      });
+      if (!r.ok) { document.getElementById('loginError').classList.remove('hidden'); return; }
+      const data = await r.json();
+      token = data.access_token;
+      localStorage.setItem('cf_token', token);
+      // Fetch profile
+      const me = await fetch(API + '/doctors/me', { headers: { Authorization: 'Bearer ' + token } });
+      doctorInfo = await me.json();
+      localStorage.setItem('cf_doctor', JSON.stringify(doctorInfo));
+      updateAuthUI(doctorInfo);
+      hideLogin();
+      loadStats();
+      toast('Welcome, Dr. ' + doctorInfo.name + '!');
+    } catch(e) { document.getElementById('loginError').classList.remove('hidden'); }
+  }
+
+  function logout() {
+    token = null; doctorInfo = null;
+    localStorage.removeItem('cf_token'); localStorage.removeItem('cf_doctor');
+    updateAuthUI(null);
+    toast('Logged out.');
+  }
+
+  function updateAuthUI(doc) {
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const nameEl = document.getElementById('doctorName');
+    if (doc) {
+      loginBtn.classList.add('hidden'); logoutBtn.classList.remove('hidden');
+      nameEl.textContent = 'Dr. ' + doc.name; nameEl.classList.remove('hidden');
+    } else {
+      loginBtn.classList.remove('hidden'); logoutBtn.classList.add('hidden');
+      nameEl.classList.add('hidden');
+    }
+  }
+
+  // ── Doctors dropdown ───────────────────────────────────────────────────────
+  async function loadDoctors() {
+    try {
+      const r = await fetch(API + '/doctors');
+      const docs = await r.json();
+      const sel = document.getElementById('f_doctor');
+      docs.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.id; opt.textContent = 'Dr. ' + d.name + ' — ' + d.specialization;
+        sel.appendChild(opt);
+      });
+    } catch(e) {}
+  }
+
+  // ── Book appointment ───────────────────────────────────────────────────────
+  async function bookAppointment(e) {
+    e.preventDefault();
+    const body = {
+      patient_name: document.getElementById('f_name').value,
+      age: parseInt(document.getElementById('f_age').value) || null,
+      gender: document.getElementById('f_gender').value,
+      phone: document.getElementById('f_phone').value,
+      location: document.getElementById('f_location').value,
+      scheduled_time: new Date(document.getElementById('f_time').value).toISOString(),
+      doctor_id: parseInt(document.getElementById('f_doctor').value) || null,
+      notes: document.getElementById('f_notes').value,
+    };
+    try {
+      const r = await fetch(API + '/appointments', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!r.ok) { const err = await r.json(); toast('Error: ' + (err.detail || 'Booking failed'), true); return; }
+      const appt = await r.json();
+      // Show confirmation
+      document.getElementById('bookForm').classList.add('hidden');
+      const card = document.getElementById('confirmCard');
+      card.classList.remove('hidden');
+      document.getElementById('c_name').textContent = appt.patient.name;
+      document.getElementById('c_time').textContent = new Date(appt.scheduled_time).toLocaleString('en-IN');
+      document.getElementById('c_phone').textContent = appt.patient.phone;
+      document.getElementById('c_token').textContent = '#' + (appt.token_number || '—');
+      loadStats();
+    } catch(e) { toast('Server error. Is the API running?', true); }
+  }
+
+  function resetBook() {
+    document.getElementById('bookForm').classList.remove('hidden');
+    document.getElementById('bookForm').reset();
+    document.getElementById('confirmCard').classList.add('hidden');
+  }
+
+  // ── Stats ──────────────────────────────────────────────────────────────────
+  async function loadStats() {
+    if (!token) return;
+    try {
+      const r = await fetch(API + '/queue/stats', { headers: { Authorization: 'Bearer ' + token } });
+      if (!r.ok) return;
+      const s = await r.json();
+      document.getElementById('s_total').textContent = s.today_total;
+      document.getElementById('s_waiting').textContent = s.today_waiting;
+      document.getElementById('s_checkedin').textContent = s.today_checked_in;
+      document.getElementById('s_done').textContent = s.today_completed;
+      document.getElementById('statsNote').textContent = 'This week: ' + s.week_total + ' appointments';
+    } catch(e) {}
+  }
+
+  // ── Queue ──────────────────────────────────────────────────────────────────
+  async function loadQueue() {
+    if (!token) { document.getElementById('queueList').innerHTML = '<p class="text-slate-400 text-sm text-center py-8">Please login to view the queue.</p>'; return; }
+    try {
+      const r = await fetch(API + '/queue/today', { headers: { Authorization: 'Bearer ' + token } });
+      const data = await r.json();
+      const el = document.getElementById('queueList');
+      if (!data.items || data.items.length === 0) {
+        el.innerHTML = '<p class="text-slate-400 text-sm text-center py-8">No appointments today yet.</p>'; return;
+      }
+      el.innerHTML = data.items.map(item => `
+        <div class="flex items-center justify-between border border-slate-100 rounded-xl px-4 py-3 ${item.is_called ? 'bg-emerald-50' : 'bg-white'}">
+          <div class="flex items-center gap-4">
+            <span class="text-2xl font-bold ${item.is_called ? 'text-emerald-500' : 'text-sky-500'} w-10 text-center">${item.token_number}</span>
+            <div>
+              <div class="font-medium text-slate-800">${item.patient_name}</div>
+              <div class="text-xs text-slate-500">${item.scheduled_time} · ${item.status.replace('_',' ')}</div>
+            </div>
+          </div>
+          ${!item.is_called ? `<button onclick="callToken(${item.token_number})"
+            class="text-xs bg-sky-500 text-white px-3 py-1.5 rounded-lg hover:bg-sky-600 transition">
+            Call →
+          </button>` : '<span class="text-xs text-emerald-600 font-medium">✓ Called</span>'}
+        </div>
+      `).join('');
+    } catch(e) { toast('Could not load queue.', true); }
+  }
+
+  async function callToken(num) {
+    if (!token) return;
+    try {
+      await fetch(API + '/queue/' + num + '/call', { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
+      toast('Token #' + num + ' called!');
+      loadQueue(); loadStats();
+    } catch(e) {}
+  }
+
+  // ── Today list ─────────────────────────────────────────────────────────────
+  async function loadToday() {
+    if (!token) { document.getElementById('todayList').innerHTML = '<p class="text-slate-400 text-sm text-center py-8">Please login to view appointments.</p>'; return; }
+    try {
+      const r = await fetch(API + '/appointments/today', { headers: { Authorization: 'Bearer ' + token } });
+      const appts = await r.json();
+      const el = document.getElementById('todayList');
+      if (!appts.length) { el.innerHTML = '<p class="text-slate-400 text-sm text-center py-8">No appointments today.</p>'; return; }
+      const statusColor = { scheduled:'bg-amber-100 text-amber-700', checked_in:'bg-sky-100 text-sky-700', completed:'bg-emerald-100 text-emerald-700', cancelled:'bg-red-100 text-red-600', no_show:'bg-slate-100 text-slate-500' };
+      el.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-slate-500 border-b border-slate-100">
+        <th class="pb-2 pr-4">#</th><th class="pb-2 pr-4">Patient</th><th class="pb-2 pr-4">Phone</th>
+        <th class="pb-2 pr-4">Time</th><th class="pb-2 pr-4">Doctor</th><th class="pb-2">Status</th>
+      </tr></thead><tbody>` +
+      appts.map(a => `<tr class="border-b border-slate-50 hover:bg-slate-50">
+        <td class="py-2 pr-4 font-bold text-sky-500">${a.token_number ? '#'+a.token_number : '—'}</td>
+        <td class="py-2 pr-4 font-medium text-slate-800">${a.patient.name}<br><span class="text-xs text-slate-400">${a.patient.age ? a.patient.age+'y' : ''} ${a.patient.gender}</span></td>
+        <td class="py-2 pr-4 text-slate-500">${a.patient.phone}</td>
+        <td class="py-2 pr-4 text-slate-600">${new Date(a.scheduled_time).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</td>
+        <td class="py-2 pr-4 text-slate-500">${a.doctor ? 'Dr. '+a.doctor.name : '—'}</td>
+        <td class="py-2"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[a.status]||''}">${a.status.replace('_',' ')}</span></td>
+      </tr>`).join('') +
+      '</tbody></table></div>';
+    } catch(e) { toast('Could not load appointments.', true); }
+  }
+
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  function toast(msg, isError = false) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `fixed bottom-6 right-6 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg z-50 fade-in ${isError ? 'bg-red-500' : 'bg-slate-800'}`;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 3500);
+  }
+</script>
+</body>
+</html>
